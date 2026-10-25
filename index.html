@@ -28,7 +28,7 @@ button{width:100%;padding:16px;border:none;border-radius:12px;font-weight:bold;f
 <div class="status" id="status">🔒 Iniciando bóveda segura...</div>
 
 <div id="vistaLista">
-<input id="buscador" placeholder="🔍 Buscar: Sintéticos, 7 Pisadas, Farmacia..." oninput="render()" style="background:#1e1e2e">
+<input id="buscador" placeholder="🔍 Buscar libro..." oninput="render()" style="background:#1e1e2e">
 <div class="top"><button class="btn-gold" onclick="nuevoLibro()">➕ Nuevo Libro</button><button class="btn-blue" onclick="backupTotal()">🛡️ Backup Total TXT</button></div>
 <div class="top"><button class="btn-red" onclick="document.getElementById('restoreInput').click()">📥 Restaurar Backup</button><input type="file" id="restoreInput" class="hidden" accept=".txt,.json" onchange="restaurar(event)"></div>
 <div class="grid" id="grid"></div>
@@ -43,8 +43,9 @@ button{width:100%;padding:16px;border:none;border-radius:12px;font-weight:bold;f
 <div id="contador" style="text-align:right;color:#aaa;font-size:.85em">0 caracteres</div>
 <label>Texto Completo:</label><textarea id="tTexto" oninput="auto()"></textarea>
 <button class="btn-green" onclick="maquetar()">📚 MAQUETAR PARA KDP</button>
-<button id="btnDown" class="btn-blue hidden" onclick="bajarHTML()">⬇️ DESCARGAR HTML KDP</button>
-<button class="btn-blue" onclick="traducir()">🔄 TRADUCIR SIN LÍMITE (Capítulo por Capítulo)</button>
+<!-- BOTÓN CAMBIADO A WORD -->
+<button id="btnDown" class="btn-blue hidden" onclick="bajarWord()">⬇️ DESCARGAR ARCHIVO WORD</button>
+<button class="btn-blue" onclick="traducir()">🔄 TRADUCIR (Capítulo por Capítulo)</button>
 <textarea id="tEn" class="hidden" style="height:260px" placeholder="Inglés aquí..."></textarea>
 <button class="btn-red" onclick="borrarLibro()">🗑️ Borrar Libro</button>
 </div>
@@ -54,7 +55,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 const $=id=>document.getElementById(id);
 let DB=null; let biblioteca=[]; let idActual=null; let htmlFinal=''; let timerAuto=null;
 
-// --- INDEXEDDB BLINDADO ---
+// --- BASE DE DATOS ---
 function abrirDB(){
  return new Promise((res,rej)=>{
   const req=indexedDB.open('BibliotecaBlindada_JoseAlirio',2);
@@ -78,11 +79,31 @@ function cargarDB(){
 
 async function init(){
  await abrirDB(); await cargarDB();
+ 
+ const titulos = [
+  "SINTÉTICOS - La Entropía del Ser", "SYNTHETICS - The Entropy of Being", "ANATOMÍA DE LA POESÍA - Cirujano del Lenguaje",
+  "INTELIGENCIA ECUATIVA - La imperfección del caos perfecto", "NEURONA 7 - El Capitolio Tricerebral", "ESPÍRITU SANTO - Gracia, Poder y Legado",
+  "LA FARMACIA DEL FUTURO", "7 PISADAS UNA HUELLA - Neuroingeniería del Alma", "7 STEPS ONE FOOTPRINT",
+  "CEREBRO PEDAGÓGICO", "PEDAGOGICAL BRAIN", "MENTE ATÓMICA - El ADN de tu Novena Sinfonía",
+  "GENOMA DEL MULTIPENSAMIENTO - Cartografía del Ser", "1001 SUSURROS NEUROHAIKU - El Poder del Futuro", "DAVID 2.0 - El Poemario", "DE MARTE A VENUS - El Lenguaje Perenne de la Pasión"
+ ];
+
  if(biblioteca.length===0){
-  const titulos=["SINTÉTICOS - La Entropía del Ser","SYNTHETICS - The Entropy of Being","ANATOMÍA DE LA POESÍA - Cirujano del Lenguaje","INTELIGENCIA ECUATIVA - La imperfección del caos perfecto","NEURONA 7 - El Capitolio Tricerebral","ESPÍRITU SANTO - Gracia, Poder y Legado","LA FARMACIA DEL FUTURO","7 PISADAS UNA HUELLA - Neuroingeniería del Alma","7 STEPS ONE FOOTPRINT - Neuroengineering of the Soul","CEREBRO PEDAGÓGICO - Mente Fascinante","PEDAGOGICAL BRAIN - Fascinating Mind","MENTE ATÓMICA - El ADN de tu Novena Sinfonía"];
-  biblioteca=titulos.map(t=>({id:Date.now().toString()+Math.random().toString(36).slice(2),titulo:t,autor:"José Alirio Ángel Corredor",texto:"",textoEn:"",estado:"borrador",actualizado:Date.now()}));
+  biblioteca=titulos.map((t, index)=>{
+   return {id:Date.now().toString()+index, titulo:t, autor:"José Alirio Ángel Corredor", texto:"", textoEn:"", estado:"borrador", actualizado:Date.now()};
+  });
   await guardarDB();
+ } else {
+  let cambios = false;
+  titulos.forEach((t, index) => {
+   if(!biblioteca.find(l => l.titulo === t)){
+    biblioteca.push({id:Date.now().toString()+index, titulo:t, autor:"José Alirio Ángel Corredor", texto:"", textoEn:"", estado:"borrador", actualizado:Date.now()});
+    cambios = true;
+   }
+  });
+  if(cambios) await guardarDB();
  }
+ 
  render(); $('status').textContent=`🔒 Bóveda blindada: ${biblioteca.length} libros seguros`;
 }
 
@@ -96,7 +117,7 @@ function render(){
   grid.appendChild(d);
  });
  const total=biblioteca.reduce((s,l)=>s+(l.texto||'').length,0);
- $('status').textContent=`🔒 ${biblioteca.length} libros • ${total.toLocaleString()} caracteres blindados • Autoguardado activo`;
+ $('status').textContent=`🔒 ${biblioteca.length} libros • ${total.toLocaleString()} caracteres blindados`;
 }
 
 function nuevoLibro(){
@@ -138,15 +159,27 @@ $('fileInput').addEventListener('change',async e=>{
 function maquetar(){
  const titulo=$('tTitulo').value, autor=$('tAutor').value, texto=$('tTexto').value;
  let h=''; texto.split('\n').forEach(l=>{ let s=l.trim(); if(!s) return; let cap=/^(CAPÍTULO|CAPITULO|PROLOGO|PRÓLOGO|EPILOGO|EPÍLOGO|PREFACIO|INTRODUCCIÓN)/i.test(s); let may=s===s.toUpperCase()&&s.length>3&&s.length<90; if(cap) h+=`<h1>${s}</h1>\n`; else if(may) h+=`<h2>${s}</h2>\n`; else h+=`<p>${s}</p>\n`; });
- htmlFinal=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${titulo}</title><style>body{font-family:Georgia,serif;line-height:1.6;text-align:justify;margin:1em}h1{font-size:1.8em;text-align:center;page-break-before:always}h2{font-size:1.3em;margin-top:1.5em}p{text-indent:1.5em;margin:0 0 .5em}h1+p,h2+p{text-indent:0}</style></head><body><div style="text-align:center;margin-top:25%"><h1 style="page-break-before:avoid">${titulo}</h1><p style="text-indent:0;font-style:italic">${autor}</p></div><div style="page-break-before:always"></div>${h}</body></html>`;
- $('btnDown').classList.remove('hidden'); $('status').textContent='✅ Maquetado KDP listo';
+ htmlFinal=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset="UTF-8"><title>${titulo}</title><style>body{font-family:Georgia,serif;line-height:1.6;text-align:justify;margin:2em}h1{font-size:22pt;text-align:center;page-break-before:always}h2{font-size:16pt;margin-top:1.5em}p{text-indent:1.5em;margin:0 0 .5em}h1+p,h2+p{text-indent:0}</style></head><body><div style="text-align:center;margin-top:25%"><h1 style="page-break-before:avoid">${titulo}</h1><p style="text-indent:0;font-style:italic">${autor}</p></div><div style="page-break-before:always"></div>${h}</body></html>`;
+ $('btnDown').classList.remove('hidden'); $('status').textContent='✅ Maquetado KDP listo para Word';
 }
-function bajarHTML(){ const b=new Blob([htmlFinal],{type:'text/html'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=$('tTitulo').value.replace(/\s+/g,'_')+'_KDP.html'; a.click(); }
+
+// FUNCIÓN CAMBIADA PARA DESCARGAR .DOC
+function bajarWord(){ 
+ // Se genera un archivo compatible con Microsoft Word (.doc)
+ const b = new Blob(['\ufeff', htmlFinal], {type: 'application/msword'}); 
+ const u = URL.createObjectURL(b); 
+ const a = document.createElement('a'); 
+ a.href = u; 
+ a.download = $('tTitulo').value.replace(/\s+/g,'_') + '.doc'; 
+ a.click(); 
+ $('status').textContent='✅ Archivo de Word descargado';
+}
+
 async function gTrans(q){ const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=en&dt=t&q='+encodeURIComponent(q); const r=await fetch(url); const j=await r.json(); return j[0].map(x=>x[0]).join(''); }
 async function traducir(){
  const es=$('tTexto').value.trim(); if(!es) return; const en=$('tEn'); en.classList.remove('hidden'); en.value=''; let out=''; let parts=[]; for(let i=0;i<es.length;i+=800) parts.push(es.slice(i,i+800));
- for(let i=0;i<parts.length;i++){ $('status').textContent=`Traduciendo ${i+1}/${parts.length} SIN LÍMITE...`; try{ out+=await gTrans(parts[i])+' '; }catch{ out+=parts[i]+' '; } en.value=out; await new Promise(r=>setTimeout(r,180)); }
- await guardarAhora(); $('status').textContent='✅ Traducción sin bloqueo terminada';
+ for(let i=0;i<parts.length;i++){ $('status').textContent=`Traduciendo ${i+1}/${parts.length}...`; try{ out+=await gTrans(parts[i])+' '; }catch{ out+=parts[i]+' '; } en.value=out; await new Promise(r=>setTimeout(r,180)); }
+ await guardarAhora(); $('status').textContent='✅ Traducción terminada';
 }
 
 function borrarLibro(){ if(!confirm('¿Borrar este libro? Haz backup primero.')) return; biblioteca=biblioteca.filter(l=>l.id!==idActual); guardarDB().then(()=>volver()); }
@@ -154,15 +187,15 @@ function borrarLibro(){ if(!confirm('¿Borrar este libro? Haz backup primero.'))
 function backupTotal(){
  let txt=`BIBLIOTECA BLINDADA - ${new Date().toLocaleString()} - ${biblioteca.length} LIBROS\n================================================================\n`;
  biblioteca.forEach(lib=>{ txt+=`\n### LIBRO: ${lib.titulo}\nAUTOR: ${lib.autor}\nESTADO: ${lib.estado}\nCARACTERES: ${lib.texto.length}\nFECHA: ${new Date(lib.actualizado).toLocaleString()}\n### TEXTO:\n${lib.texto}\n\n### TRADUCCIÓN:\n${lib.textoEn||''}\n\n================================================================\n`; });
- const b=new Blob([txt],{type:'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`BIBLIOTECA_TOTAL_BLINDADA_${Date.now()}.txt`; a.click(); $('status').textContent='✅ Backup total descargado en Descargas';
+ const b=new Blob([txt],{type:'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`BIBLIOTECA_TOTAL_BLINDADA_${Date.now()}.txt`; a.click(); $('status').textContent='✅ Backup total descargado';
 }
 function restaurar(e){
  const f=e.target.files[0]; if(!f) return; const r=new FileReader();
  r.onload=async ev=>{
   const txt=ev.target.result; 
-  if(txt.includes('### LIBRO:')){ // formato nuestro
+  if(txt.includes('### LIBRO:')){ 
    const libros=txt.split('### LIBRO:').slice(1); libros.forEach(chunk=>{ const lines=chunk.split('\n'); const titulo=lines[0].trim(); const autorLine=lines.find(l=>l.startsWith('AUTOR:'))||''; const autor=autorLine.replace('AUTOR:','').trim(); const textoMatch=chunk.match(/### TEXTO:\n([\s\S]*?)\n\n### TRADUCCI/); let texto=textoMatch?textoMatch[1]:chunk; biblioteca.push({id:Date.now().toString()+Math.random(),titulo,autor,texto,estado:'borrador',actualizado:Date.now()}); });
-  }else{ // txt simple = un libro
+  }else{ 
    biblioteca.unshift({id:Date.now().toString(),titulo:f.name.replace('.txt',''),autor:'José Alirio Ángel Corredor',texto:txt,estado:'borrador',actualizado:Date.now()});
   }
   await guardarDB(); render(); $('status').textContent='✅ Restaurado desde backup';
@@ -172,4 +205,4 @@ function restaurar(e){
 init();
 </script>
 </body>
-                                                                                      </html>
+</html>
