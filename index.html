@@ -42,9 +42,8 @@ button{width:100%;padding:16px;border:none;border-radius:12px;font-weight:bold;f
 <label>Subir Word/PDF/TXT a ESTE libro:</label><input type="file" id="fileInput" accept=".docx,.pdf,.txt">
 <div id="contador" style="text-align:right;color:#aaa;font-size:.85em">0 caracteres</div>
 <label>Texto Completo:</label><textarea id="tTexto" oninput="auto()"></textarea>
-<button class="btn-green" onclick="maquetar()">📚 MAQUETAR PARA KDP</button>
-<!-- BOTÓN CAMBIADO A WORD -->
-<button id="btnDown" class="btn-blue hidden" onclick="bajarWord()">⬇️ DESCARGAR ARCHIVO WORD</button>
+<button class="btn-green" onclick="maquetar()">📚 LIMPIAR Y MAQUETAR PARA KDP</button>
+<button id="btnDown" class="btn-blue hidden" onclick="bajarWord()">⬇️ DESCARGAR ARCHIVO WORD LIMPIO</button>
 <button class="btn-blue" onclick="traducir()">🔄 TRADUCIR (Capítulo por Capítulo)</button>
 <textarea id="tEn" class="hidden" style="height:260px" placeholder="Inglés aquí..."></textarea>
 <button class="btn-red" onclick="borrarLibro()">🗑️ Borrar Libro</button>
@@ -156,23 +155,58 @@ $('fileInput').addEventListener('change',async e=>{
  }catch(err){ $('status').textContent='❌ '+err.message; }
 });
 
+// --- AQUÍ ESTÁ LA MAGIA DE LIMPIEZA ---
 function maquetar(){
- const titulo=$('tTitulo').value, autor=$('tAutor').value, texto=$('tTexto').value;
- let h=''; texto.split('\n').forEach(l=>{ let s=l.trim(); if(!s) return; let cap=/^(CAPÍTULO|CAPITULO|PROLOGO|PRÓLOGO|EPILOGO|EPÍLOGO|PREFACIO|INTRODUCCIÓN)/i.test(s); let may=s===s.toUpperCase()&&s.length>3&&s.length<90; if(cap) h+=`<h1>${s}</h1>\n`; else if(may) h+=`<h2>${s}</h2>\n`; else h+=`<p>${s}</p>\n`; });
+ const titulo=$('tTitulo').value, autor=$('tAutor').value, textoOriginal=$('tTexto').value;
+ let textoLimpio = textoOriginal;
+ 
+ // 1. Borrar números de página (ej. ===== Page 1 =====)
+ textoLimpio = textoLimpio.replace(/===== Page \d+ =====/gi, '');
+ 
+ // 2. Borrar símbolos de Markdown (#######, **, __)
+ textoLimpio = textoLimpio.replace(/#{2,}/g, ''); 
+ textoLimpio = textoLimpio.replace(/\*\*/g, ''); 
+ textoLimpio = textoLimpio.replace(/__/g, '');
+
+ // 3. Unir frases cortadas por saltos de línea
+ // Si una línea no termina en punto y la siguiente empieza en minúscula, las unimos.
+ textoLimpio = textoLimpio.replace(/([^\.\?\!\:\;\"\'])\n([a-záéíóúñ])/g, '$1 $2');
+
+ // 4. Separar por bloques lógicos (doble salto de línea)
+ let parrafos = textoLimpio.split(/\n\s*\n/);
+ let h = '';
+
+ parrafos.forEach(p => {
+   let parrafoLimpio = p.trim().replace(/\n/g, ' '); // Convertir saltos simples en espacios
+   if(!parrafoLimpio) return;
+
+   // Detectar títulos (mayúsculas o palabras clave)
+   let esTitulo = /^(CAPÍTULO|CAPITULO|PROLOGO|PRÓLOGO|EPILOGO|EPÍLOGO|PREFACIO|INTRODUCCIÓN|PISADA)/i.test(parrafoLimpio);
+   let esMayuscula = parrafoLimpio === parrafoLimpio.toUpperCase() && parrafoLimpio.length < 100 && parrafoLimpio.length > 3;
+
+   if(esTitulo) {
+     h += `<h1>${parrafoLimpio}</h1>\n`;
+   } else if(esMayuscula) {
+     h += `<h2>${parrafoLimpio}</h2>\n`;
+   } else {
+     h += `<p>${parrafoLimpio}</p>\n`;
+   }
+ });
+
  htmlFinal=`<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset="UTF-8"><title>${titulo}</title><style>body{font-family:Georgia,serif;line-height:1.6;text-align:justify;margin:2em}h1{font-size:22pt;text-align:center;page-break-before:always}h2{font-size:16pt;margin-top:1.5em}p{text-indent:1.5em;margin:0 0 .5em}h1+p,h2+p{text-indent:0}</style></head><body><div style="text-align:center;margin-top:25%"><h1 style="page-break-before:avoid">${titulo}</h1><p style="text-indent:0;font-style:italic">${autor}</p></div><div style="page-break-before:always"></div>${h}</body></html>`;
- $('btnDown').classList.remove('hidden'); $('status').textContent='✅ Maquetado KDP listo para Word';
+ 
+ $('btnDown').classList.remove('hidden'); 
+ $('status').textContent='✅ Texto LIMPIO y maquetado. Listo para descargar.';
 }
 
-// FUNCIÓN CAMBIADA PARA DESCARGAR .DOC
 function bajarWord(){ 
- // Se genera un archivo compatible con Microsoft Word (.doc)
  const b = new Blob(['\ufeff', htmlFinal], {type: 'application/msword'}); 
  const u = URL.createObjectURL(b); 
  const a = document.createElement('a'); 
  a.href = u; 
  a.download = $('tTitulo').value.replace(/\s+/g,'_') + '.doc'; 
  a.click(); 
- $('status').textContent='✅ Archivo de Word descargado';
+ $('status').textContent='✅ Word limpio descargado';
 }
 
 async function gTrans(q){ const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=en&dt=t&q='+encodeURIComponent(q); const r=await fetch(url); const j=await r.json(); return j[0].map(x=>x[0]).join(''); }
