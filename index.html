@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Biblioteca Blindada 100% - No Pierde Nada</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#080810;--panel:#1a1a25;--card:#24243a;--gold:#ffd700;--green:#22c55e;--blue:#3b82f6;--cyan:#22d3ee}
+*{box-sizing:border-box}body{margin:0;padding:12px;background:var(--bg);color:#e5e5e5;font-family:system-ui,sans-serif}
+h1{text-align:center;color:var(--gold);margin:8px 0;font-size:1.4rem}
+.status{position:sticky;top:0;z-index:10;background:#000;padding:10px;border-radius:10px;text-align:center;color:var(--cyan);font-weight:bold;margin-bottom:12px;border:1px solid #333}
+.container{background:var(--panel);padding:14px;border-radius:14px;margin-bottom:14px;border:1px solid #2a2a3a}
+.grid{display:grid;gap:10px}
+.card{background:var(--card);padding:14px;border-radius:12px;border-left:4px solid var(--gold);cursor:pointer}
+.card h3{margin:0 0 4px;color:var(--gold)} .meta{font-size:.85em;color:#aaa;display:flex;justify-content:space-between}
+input,textarea,select{width:100%;background:#111;color:#fff;border:1px solid #444;border-radius:10px;padding:14px;font-size:16px;margin-bottom:10px}
+textarea{height:420px;line-height:1.6} input[type=file]{background:#4a1a8a;border:2px dashed var(--gold);padding:16px;font-weight:bold}
+button{width:100%;padding:16px;border:none;border-radius:12px;font-weight:bold;font-size:16px;margin-bottom:10px;cursor:pointer;color:#fff}
+.btn-gold{background:var(--gold);color:#000} .btn-green{background:var(--green);color:#000} .btn-blue{background:var(--blue)} .btn-red{background:#111;border:1px solid #444}
+.top{display:flex;gap:8px} .top button{flex:1;padding:12px} .hidden{display:none}
+.badge{padding:3px 8px;border-radius:20px;font-size:.7em;background:#333}
+</style>
+</head>
+<body>
+<h1>📚 BIBLIOTECA BLINDADA 100%</h1>
+<div class="status" id="status">🔒 Iniciando bóveda segura...</div>
+
+<div id="vistaLista">
+<input id="buscador" placeholder="🔍 Buscar: Sintéticos, 7 Pisadas, Farmacia..." oninput="render()" style="background:#1e1e2e">
+<div class="top"><button class="btn-gold" onclick="nuevoLibro()">➕ Nuevo Libro</button><button class="btn-blue" onclick="backupTotal()">🛡️ Backup Total TXT</button></div>
+<div class="top"><button class="btn-red" onclick="document.getElementById('restoreInput').click()">📥 Restaurar Backup</button><input type="file" id="restoreInput" class="hidden" accept=".txt,.json" onchange="restaurar(event)"></div>
+<div class="grid" id="grid"></div>
+</div>
+
+<div id="vistaEditor" class="hidden">
+<div class="top"><button class="btn-red" onclick="volver()">⬅️ Biblioteca</button><button class="btn-green" onclick="guardarAhora()">💾 Guardar Ahora</button></div>
+<label>Título del Libro:</label><input id="tTitulo" oninput="auto()">
+<label>Autor:</label><input id="tAutor" oninput="auto()">
+<label>Estado:</label><select id="tEstado" onchange="auto()"><option value="borrador">Borrador</option><option value="maquetado">Maquetado KDP</option><option value="listo">Listo para Amazon</option></select>
+<label>Subir Word/PDF/TXT a ESTE libro:</label><input type="file" id="fileInput" accept=".docx,.pdf,.txt">
+<div id="contador" style="text-align:right;color:#aaa;font-size:.85em">0 caracteres</div>
+<label>Texto Completo:</label><textarea id="tTexto" oninput="auto()"></textarea>
+<button class="btn-green" onclick="maquetar()">📚 MAQUETAR PARA KDP</button>
+<button id="btnDown" class="btn-blue hidden" onclick="bajarHTML()">⬇️ DESCARGAR HTML KDP</button>
+<button class="btn-blue" onclick="traducir()">🔄 TRADUCIR SIN LÍMITE (Capítulo por Capítulo)</button>
+<textarea id="tEn" class="hidden" style="height:260px" placeholder="Inglés aquí..."></textarea>
+<button class="btn-red" onclick="borrarLibro()">🗑️ Borrar Libro</button>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=id=>document.getElementById(id);
+let DB=null; let biblioteca=[]; let idActual=null; let htmlFinal=''; let timerAuto=null;
+
+// --- INDEXEDDB BLINDADO ---
+function abrirDB(){
+ return new Promise((res,rej)=>{
+  const req=indexedDB.open('BibliotecaBlindada_JoseAlirio',2);
+  req.onupgradeneeded=e=>{ const db=e.target.result; if(!db.objectStoreNames.contains('libros')) db.createObjectStore('libros',{keyPath:'id'}); };
+  req.onsuccess=e=>{ DB=e.target.result; res(DB); };
+  req.onerror=()=>rej();
+ });
+}
+function guardarDB(){
+ return new Promise(r=>{
+  const tx=DB.transaction('libros','readwrite'); const st=tx.objectStore('libros'); st.clear();
+  biblioteca.forEach(l=>st.put(l)); tx.oncomplete=()=>r();
+ });
+}
+function cargarDB(){
+ return new Promise(r=>{
+  const tx=DB.transaction('libros','readonly'); const st=tx.objectStore('libros'); const req=st.getAll();
+  req.onsuccess=()=>{ biblioteca=req.result||[]; r(); };
+ });
+}
+
+async function init(){
+ await abrirDB(); await cargarDB();
+ if(biblioteca.length===0){
+  const titulos=["SINTÉTICOS - La Entropía del Ser","SYNTHETICS - The Entropy of Being","ANATOMÍA DE LA POESÍA - Cirujano del Lenguaje","INTELIGENCIA ECUATIVA - La imperfección del caos perfecto","NEURONA 7 - El Capitolio Tricerebral","ESPÍRITU SANTO - Gracia, Poder y Legado","LA FARMACIA DEL FUTURO","7 PISADAS UNA HUELLA - Neuroingeniería del Alma","7 STEPS ONE FOOTPRINT - Neuroengineering of the Soul","CEREBRO PEDAGÓGICO - Mente Fascinante","PEDAGOGICAL BRAIN - Fascinating Mind","MENTE ATÓMICA - El ADN de tu Novena Sinfonía"];
+  biblioteca=titulos.map(t=>({id:Date.now().toString()+Math.random().toString(36).slice(2),titulo:t,autor:"José Alirio Ángel Corredor",texto:"",textoEn:"",estado:"borrador",actualizado:Date.now()}));
+  await guardarDB();
+ }
+ render(); $('status').textContent=`🔒 Bóveda blindada: ${biblioteca.length} libros seguros`;
+}
+
+function render(){
+ const q=$('buscador').value.toLowerCase(); const grid=$('grid'); grid.innerHTML='';
+ let fil=biblioteca.filter(l=>(l.titulo+l.autor).toLowerCase().includes(q)).sort((a,b)=>b.actualizado-a.actualizado);
+ if(!fil.length){ grid.innerHTML='<p style="text-align:center;color:#666">No hay libros. Crea uno.</p>'; return; }
+ fil.forEach(lib=>{
+  const d=document.createElement('div'); d.className='card'; d.onclick=()=>abrir(lib.id);
+  d.innerHTML=`<h3>${lib.titulo}</h3><div class="meta"><span>${(lib.texto||'').length.toLocaleString()} car. • ${(lib.texto||'').split(/\s+/).filter(x=>x).length.toLocaleString()} pal.</span><span class="badge">${lib.estado}</span></div><div style="font-size:.75em;color:#777;margin-top:4px">${new Date(lib.actualizado).toLocaleString()}</div>`;
+  grid.appendChild(d);
+ });
+ const total=biblioteca.reduce((s,l)=>s+(l.texto||'').length,0);
+ $('status').textContent=`🔒 ${biblioteca.length} libros • ${total.toLocaleString()} caracteres blindados • Autoguardado activo`;
+}
+
+function nuevoLibro(){
+ const id=Date.now().toString(); biblioteca.unshift({id,titulo:'Nuevo Libro',autor:'José Alirio Ángel Corredor',texto:'',textoEn:'',estado:'borrador',actualizado:Date.now()});
+ guardarDB().then(()=>abrir(id));
+}
+function abrir(id){
+ idActual=id; const lib=biblioteca.find(l=>l.id===id);
+ $('tTitulo').value=lib.titulo; $('tAutor').value=lib.autor; $('tEstado').value=lib.estado; $('tTexto').value=lib.texto; $('tEn').value=lib.textoEn||'';
+ $('vistaLista').classList.add('hidden'); $('vistaEditor').classList.remove('hidden'); contar();
+}
+function volver(){ guardarAhora(); $('vistaEditor').classList.add('hidden'); $('vistaLista').classList.remove('hidden'); render(); }
+
+function auto(){
+ contar();
+ if(timerAuto) clearTimeout(timerAuto);
+ timerAuto=setTimeout(()=>guardarAhora(),1500);
+ $('status').textContent='💾 Guardando automático...';
+}
+function contar(){ const t=$('tTexto').value; $('contador').textContent=`${t.length.toLocaleString()} caracteres • ${t.split(/\s+/).filter(x=>x).length.toLocaleString()} palabras`; }
+
+async function guardarAhora(){
+ if(!idActual) return; const lib=biblioteca.find(l=>l.id===idActual);
+ lib.titulo=$('tTitulo').value; lib.autor=$('tAutor').value; lib.estado=$('tEstado').value; lib.texto=$('tTexto').value; lib.textoEn=$('tEn').value; lib.actualizado=Date.now();
+ await guardarDB(); localStorage.setItem('ultimo_backup_'+lib.id, JSON.stringify({t:Date.now(), texto:lib.texto.slice(0,200000)}));
+ $('status').textContent='✅ Guardado blindado: '+new Date().toLocaleTimeString();
+}
+
+$('fileInput').addEventListener('change',async e=>{
+ const f=e.target.files[0]; if(!f) return; $('status').textContent='Leyendo archivo...';
+ try{
+  if(f.name.endsWith('.docx')){ const b=await f.arrayBuffer(); const r=await mammoth.extractRawText({arrayBuffer:b}); $('tTexto').value+= '\n\n'+r.value; }
+  else if(f.name.endsWith('.pdf')){ const b=await f.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:b}).promise; let full=''; for(let i=1;i<=pdf.numPages;i++){ $('status').textContent=`Leyendo ${i}/${pdf.numPages}`; const p=await pdf.getPage(i); const c=await p.getTextContent(); full+=c.items.map(s=>s.str).join(' ')+'\n\n'; } $('tTexto').value+= '\n\n'+full; }
+  else{ const t=await f.text(); $('tTexto').value+= '\n\n'+t; }
+  await guardarAhora(); contar(); $('status').textContent='✅ Texto agregado y blindado';
+ }catch(err){ $('status').textContent='❌ '+err.message; }
+});
+
+function maquetar(){
+ const titulo=$('tTitulo').value, autor=$('tAutor').value, texto=$('tTexto').value;
+ let h=''; texto.split('\n').forEach(l=>{ let s=l.trim(); if(!s) return; let cap=/^(CAPÍTULO|CAPITULO|PROLOGO|PRÓLOGO|EPILOGO|EPÍLOGO|PREFACIO|INTRODUCCIÓN)/i.test(s); let may=s===s.toUpperCase()&&s.length>3&&s.length<90; if(cap) h+=`<h1>${s}</h1>\n`; else if(may) h+=`<h2>${s}</h2>\n`; else h+=`<p>${s}</p>\n`; });
+ htmlFinal=`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${titulo}</title><style>body{font-family:Georgia,serif;line-height:1.6;text-align:justify;margin:1em}h1{font-size:1.8em;text-align:center;page-break-before:always}h2{font-size:1.3em;margin-top:1.5em}p{text-indent:1.5em;margin:0 0 .5em}h1+p,h2+p{text-indent:0}</style></head><body><div style="text-align:center;margin-top:25%"><h1 style="page-break-before:avoid">${titulo}</h1><p style="text-indent:0;font-style:italic">${autor}</p></div><div style="page-break-before:always"></div>${h}</body></html>`;
+ $('btnDown').classList.remove('hidden'); $('status').textContent='✅ Maquetado KDP listo';
+}
+function bajarHTML(){ const b=new Blob([htmlFinal],{type:'text/html'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=$('tTitulo').value.replace(/\s+/g,'_')+'_KDP.html'; a.click(); }
+async function gTrans(q){ const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl=es&tl=en&dt=t&q='+encodeURIComponent(q); const r=await fetch(url); const j=await r.json(); return j[0].map(x=>x[0]).join(''); }
+async function traducir(){
+ const es=$('tTexto').value.trim(); if(!es) return; const en=$('tEn'); en.classList.remove('hidden'); en.value=''; let out=''; let parts=[]; for(let i=0;i<es.length;i+=800) parts.push(es.slice(i,i+800));
+ for(let i=0;i<parts.length;i++){ $('status').textContent=`Traduciendo ${i+1}/${parts.length} SIN LÍMITE...`; try{ out+=await gTrans(parts[i])+' '; }catch{ out+=parts[i]+' '; } en.value=out; await new Promise(r=>setTimeout(r,180)); }
+ await guardarAhora(); $('status').textContent='✅ Traducción sin bloqueo terminada';
+}
+
+function borrarLibro(){ if(!confirm('¿Borrar este libro? Haz backup primero.')) return; biblioteca=biblioteca.filter(l=>l.id!==idActual); guardarDB().then(()=>volver()); }
+
+function backupTotal(){
+ let txt=`BIBLIOTECA BLINDADA - ${new Date().toLocaleString()} - ${biblioteca.length} LIBROS\n================================================================\n`;
+ biblioteca.forEach(lib=>{ txt+=`\n### LIBRO: ${lib.titulo}\nAUTOR: ${lib.autor}\nESTADO: ${lib.estado}\nCARACTERES: ${lib.texto.length}\nFECHA: ${new Date(lib.actualizado).toLocaleString()}\n### TEXTO:\n${lib.texto}\n\n### TRADUCCIÓN:\n${lib.textoEn||''}\n\n================================================================\n`; });
+ const b=new Blob([txt],{type:'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`BIBLIOTECA_TOTAL_BLINDADA_${Date.now()}.txt`; a.click(); $('status').textContent='✅ Backup total descargado en Descargas';
+}
+function restaurar(e){
+ const f=e.target.files[0]; if(!f) return; const r=new FileReader();
+ r.onload=async ev=>{
+  const txt=ev.target.result; 
+  if(txt.includes('### LIBRO:')){ // formato nuestro
+   const libros=txt.split('### LIBRO:').slice(1); libros.forEach(chunk=>{ const lines=chunk.split('\n'); const titulo=lines[0].trim(); const autorLine=lines.find(l=>l.startsWith('AUTOR:'))||''; const autor=autorLine.replace('AUTOR:','').trim(); const textoMatch=chunk.match(/### TEXTO:\n([\s\S]*?)\n\n### TRADUCCI/); let texto=textoMatch?textoMatch[1]:chunk; biblioteca.push({id:Date.now().toString()+Math.random(),titulo,autor,texto,estado:'borrador',actualizado:Date.now()}); });
+  }else{ // txt simple = un libro
+   biblioteca.unshift({id:Date.now().toString(),titulo:f.name.replace('.txt',''),autor:'José Alirio Ángel Corredor',texto:txt,estado:'borrador',actualizado:Date.now()});
+  }
+  await guardarDB(); render(); $('status').textContent='✅ Restaurado desde backup';
+ }; r.readAsText(f);
+}
+
+init();
+</script>
+</body>
+                                                                                      </html>
