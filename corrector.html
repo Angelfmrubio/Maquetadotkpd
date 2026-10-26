@@ -3,78 +3,107 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FENIX 7 V4 - 3 Cambios Oficiales</title>
+<title>FENIX 7 FINAL</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
-:root{--gold:#ffd700} body{background:#121212;color:#fff;padding:15px;font-family:system-ui;text-align:center}
-.h{border:2px solid var(--gold);border-radius:12px;padding:12px;background:#1a1a1a;margin-bottom:10px}
-textarea{width:100%;height:120px;background:#1e1e1e;color:#fff;border:1px solid #333;border-radius:8px;padding:10px;box-sizing:border-box}
-button{width:100%;padding:16px;border:0;border-radius:8px;font-weight:900;margin:6px 0;font-size:16px}
-.g{background:var(--gold);color:#000} .o{background:#ff9800;color:#000} .b{background:#2196F3;color:#fff}
-.s{background:#111;color:var(--gold);border:2px solid var(--gold)} .e{background:#00ffea;color:#000}
-.r{background:#2c3e50;padding:15px;border-radius:8px;min-height:180px;text-align:left;white-space:pre-wrap;border:1px solid var(--gold)}
-.st{color:#00ffea;font-weight:bold;min-height:22px;margin:8px 0}
+body{background:#000;color:#fff;padding:15px;font-family:system-ui;text-align:center}
+h2{color:gold;border:2px solid gold;border-radius:10px;padding:10px;font-size:18px}
+textarea{width:100%;height:120px;background:#111;color:#fff;border:2px solid #333;border-radius:10px;padding:10px;box-sizing:border-box}
+button{width:100%;padding:15px;background:gold;color:#000;font-weight:900;font-size:16px;border:0;border-radius:12px;margin:8px 0}
+.r{background:#1a1a1a;padding:15px;border-radius:10px;text-align:left;white-space:pre-wrap;min-height:150px;border:1px solid gold;margin-top:10px;font-size:14px}
+.st{color:#00ffea;margin:8px;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="h">Academia FENIX 7 J-29428935-5<br><b>V4 - CAMBIOS OFICIALES</b><br>1. 7 pisadas una huella<br>2. José Alirio Angel Corredor<br>3. neuroingeniería del alma</div>
-<input type="file" id="f" accept=".docx,.pdf,.epub,.txt" style="width:100%;padding:12px;background:#1e1e1e;border:2px dashed var(--gold);border-radius:8px;color:#fff">
-<div class="st" id="st">Toque para subir libro completo</div>
-<textarea id="in" placeholder="Texto original..."></textarea>
-<button class="g" onclick="limpiarV4()">✨ APLICAR LOS 3 CAMBIOS OFICIALES + LIMPIEZA</button>
-<button class="o" onclick="dedup()">🗑️ Quitar duplicados</button>
-<div class="r" id="out">Texto limpio aparecerá aquí...</div>
-<button class="s" onclick="save()">💾 SAVE en celular</button>
-<button class="b" onclick="copy()">📋 Copiar</button>
-<button class="g" onclick="downloadDoc()">💾 Descargar .doc limpio</button>
-<button class="e" onclick="exportJson()">📤 EXPORTAR MEMORIA_FENIX7.json</button>
-
+<h2>FENIX 7 FINAL<br>Procesador de Manuscritos</h2>
+<input type="file" id="f" accept=".docx,.pdf,.txt" style="width:100%;padding:10px;background:#111;border:2px dashed gold;border-radius:8px;color:#fff">
+<div class="st" id="st">1. Sube tu archivo (PDF o Word)</div>
+<textarea id="in" placeholder="O pega el texto aquí..."></textarea>
+<button onclick="corregir()">✨ 2. CORREGIR TODO</button>
+<div class="r" id="out">El texto corregido aparecerá aquí...</div>
+<button onclick="descargar()" style="background:#2196F3;color:#fff">💾 3. DESCARGAR EN WORD</button>
 <script>
 pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const $=id=>document.getElementById(id); let name="7_PISADAS_UNA_HUELLA";
+let nombreFile="Manuscrito_Limpio";
+
 document.getElementById('f').addEventListener('change', async e=>{
- const file=e.target.files[0]; if(!file) return; name=file.name.split('.')[0]; $('st').innerText='Leyendo...';
- const ext=file.name.split('.').pop().toLowerCase();
+ const file=e.target.files[0]; if(!file) return; nombreFile=file.name.split('.')[0];
+ document.getElementById('st').innerText='Leyendo archivo...';
  try{
-  if(ext==='docx'){ const b=await file.arrayBuffer(); const r=await mammoth.extractRawText({arrayBuffer:b}); $('in').value=r.value; $('st').innerText='✅ Word cargado'; }
-  else if(ext==='pdf'){ const b=await file.arrayBuffer(); const pdf=await pdfjsLib.getDocument({data:b}).promise; let full=''; for(let i=1;i<=pdf.numPages;i++){ $('st').innerText=`Pág ${i}/${pdf.numPages}`; const pg=await pdf.getPage(i); const c=await pg.getTextContent(); full+=c.items.map(o=>o.str).join(' ')+'\n\n'; } $('in').value=full; $('st').innerText='✅ PDF cargado'; }
-  else if(ext==='epub'){ const b=await file.arrayBuffer(); const zip=await JSZip.loadAsync(b); let full=''; for(const k of Object.keys(zip.files).filter(n=>n.endsWith('.html')||n.endsWith('.xhtml'))){ const t=await zip.files[k].async('string'); full+=t.replace(/<[^>]+>/g,' ')+'\n\n'; } $('in').value=full; $('st').innerText='✅ ePub'; }
-  else{ $('in').value=await file.text(); $('st').innerText='✅ TXT'; }
- }catch(err){ $('st').innerText='❌ '+err.message; }
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='docx'){
+    const b=await file.arrayBuffer(); 
+    const r=await mammoth.extractRawText({arrayBuffer:b}); 
+    document.getElementById('in').value=r.value; 
+    document.getElementById('st').innerText='✅ Word leído';
+  } else if(ext==='pdf'){
+    const b=await file.arrayBuffer(); 
+    const pdf=await pdfjsLib.getDocument({data:b}).promise; 
+    let full=''; 
+    for(let i=1;i<=pdf.numPages;i++){
+      document.getElementById('st').innerText='Leyendo PDF pág ' + i + ' de ' + pdf.numPages;
+      const pg=await pdf.getPage(i); 
+      const c=await pg.getTextContent(); 
+      full+=c.items.map(o=>o.str).join(' ')+'\n\n';
+    } 
+    document.getElementById('in').value=full; 
+    document.getElementById('st').innerText='✅ PDF leído';
+  } else{ 
+    document.getElementById('in').value=await file.text(); 
+    document.getElementById('st').innerText='✅ Texto leído';
+  }
+ }catch(err){document.getElementById('st').innerText='❌ Error: '+err.message;}
 });
 
-function limpiarV4(){
- let t=$('in').value; if(!t){alert('Suba libro');return;}
- // LIMPIEZA BASE
+function corregir(){
+ let t=document.getElementById('in').value; 
+ if(!t.trim()){alert('Sube un archivo o pega texto');return;}
+
+ // 1. Arreglar guiones de escáner
  t=t.replace(/(\w+)-\s*\n\s*(\w+)/g,'$1$2').replace(/(\w+)-\s+(\w+)/g,'$1$2');
- // === LOS 3 CAMBIOS OFICIALES QUE USTED PIDIÓ ===
- // 1. 7 pisadas sobre una huella -> 7 pisadas una huella (con variaciones de mayúsculas)
- t=t.replace(/7\s+pisadas\s+sobre\s+una\s+huella/gi,'7 pisadas una huella');
- t=t.replace(/7\s+PISADAS\s+SOBRE\s+UNA\s+HUELLA/g,'7 PISADAS UNA HUELLA');
- // 2. José Ángel -> José Alirio Angel Corredor
- t=t.replace(/José\s+Ángel/gi,'José Alirio Angel Corredor');
- t=t.replace(/Jose\s+Angel/gi,'Jose Alirio Angel Corredor');
- t=t.replace(/\bJosé\s+Ángel\b/g,'José Alirio Angel Corredor');
- // 3. arquitectura el alma -> neuroingeniería del alma
- t=t.replace(/arquitectura\s+el\s+alma/gi,'neuroingeniería del alma');
- t=t.replace(/arquitectura\s+del\s+alma/gi,'neuroingeniería del alma');
- t=t.replace(/ARQUITECTURA\s+EL\s+ALMA/g,'NEUROINGENIERÍA DEL ALMA');
- // Limpieza extra
- t=t.replace(/resilie\s+ncia/gi,'resiliencia').replace(/A\s+RQUI\s+TECTO/gi,'ARQUITECTO').replace(/AUTOMATI\s+CO/gi,'AUTOMATICO');
- t=t.replace(/[ ]{2,}/g,' ').replace(/\s+([.,;:!?])/g,'$1');
- $('out').innerText=t;
- localStorage.setItem('FENIX7_V4',t);
- $('st').innerText='✅ 3 CAMBIOS APLICADOS: 7 pisadas una huella + José Alirio Angel Corredor + neuroingeniería del alma';
+ 
+ // 2. Unificar NOMBRE (sin tildes en Ángel)
+ const NOMBRE='José Alirio Angel Corredor';
+ t=t.replace(/José\s+Alirio\s+Ángel\s+Corredor/gi,NOMBRE);
+ t=t.replace(/José\s+Alirio\s+Angel\s+Corredor/gi,NOMBRE);
+ t=t.replace(/José\s+Ángel/gi,NOMBRE);
+ t=t.replace(/José\s+Angel/gi,NOMBRE);
+ t=t.replace(/Jose\s+Ángel/gi,NOMBRE);
+ t=t.replace(/Jose\s+Angel/gi,NOMBRE);
+
+ // 3. Unificar TÍTULO y SUBTÍTULO
+ t=t.replace(/7\s+pisadas\s+sobre\s+una\s+huela/gi,'7 PISADAS UNA HUELLA');
+ t=t.replace(/7\s+pisadas\s+una\s+huela/gi,'7 PISADAS UNA HUELLA');
+ t=t.replace(/7\s+PISADAS\s+UNA\s+HUELA/gi,'7 PISADAS UNA HUELLA');
+ t=t.replace(/arquitectura\s+(el|del)\s+alma/gi,'neuroingeniería del alma');
+ t=t.replace(/Neuroingenieria\s+del\s+alma/gi,'neuroingeniería del alma');
+
+ // 4. Correcciones específicas de ortografía y errores del libro
+ t=t.replace(/\bHUELILA\b/gi,'HUELLA');
+ t=t.replace(/\bCoredor\b/gi,'Corredor');
+ t=t.replace(/\boxitocica\b/gi,'oxitocina');
+ t=t.replace(/\boxitócica\b/gi,'oxitocina');
+ t=t.replace(/\bneguentropia\b/gi,'neguentropía');
+ t=t.replace(/\btrastocado\b/gi,'trastornado');
+ t=t.replace(/\bdia\b/gi,'día');
+ t=t.replace(/\btenia\b/gi,'tenía');
+ t=t.replace(/\bhabia\b/gi,'había');
+
+ // 5. Limpieza de espacios
+ t=t.replace(/[^\S\n]{2,}/g,' ').replace(/\s+([.,;:!?])/g,'$1');
+
+ document.getElementById('out').innerText=t;
+ document.getElementById('st').innerText='✅ CORREGIDO Y LISTO';
 }
 
-function dedup(){ let txt=$('out').innerText; if(txt.includes('aquí')) txt=$('in').value; const lines=txt.split('\n'); const seen=new Set(); const res=[]; let del=0; for(let l of lines){ const k=l.trim().toLowerCase(); if(!k){ if(res[res.length-1]!=='') res.push(''); continue;} if(!seen.has(k)){seen.add(k); res.push(l);} else del++; } $('out').innerText=res.join('\n'); $('st').innerText=`✅ ${del} duplicados eliminados`; }
-function save(){ localStorage.setItem('FENIX7_V4',$('out').innerText); $('st').innerText='✅ Guardado en celular'; }
-function copy(){ navigator.clipboard.writeText($('out').innerText).then(()=>$('st').innerText='✅ Copiado'); }
-function downloadDoc(){ const txt=$('out').innerText; const html=`<html><head><meta charset='utf-8'></head><body><p style="white-space:pre-wrap">${txt}</p></body></html>`; const blob=new Blob(['\ufeff',html],{type:'application/msword'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'_FENIX7_V4_OFICIAL.doc'; a.click(); }
-function exportJson(){ const txt=$('out').innerText; const data={autor:"José Alirio Angel Corredor", marca:"FENIX 7 J-29428935-5", libro:name, titulo_oficial:"7 pisadas una huella", subtitulo:"neuroingeniería del alma", fecha:new Date().toISOString(), contenido:txt, palabras:txt.split(/\s+/).length}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='MEMORIA_FENIX7_'+name+'_OFICIAL.json'; a.click(); $('st').innerText='✅ JSON OFICIAL exportado'; }
-window.addEventListener('load',()=>{ const g=localStorage.getItem('FENIX7_V4'); if(g){ $('out').innerText=g; $('st').innerText='✅ Recuperado última versión V4'; }});
+function descargar(){
+ const txt=document.getElementById('out').innerText; 
+ if(txt.includes('aparecerá aquí')){alert('Primero corrige el texto');return;}
+ const html='<html><head><meta charset="utf-8"></head><body><p style="white-space:pre-wrap">'+txt+'</p></body></html>';
+ const blob=new Blob(['\ufeff',html],{type:'application/msword'});
+ const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nombreFile+'_CORREGIDO.doc'; a.click();
+}
 </script>
 </body>
 </html>
