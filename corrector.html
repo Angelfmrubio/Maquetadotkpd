@@ -1,67 +1,171 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Corrector Magico - Academia Literaria Fenix 7</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<style>
- body{font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;padding:18px;text-align:center;margin:0}
- .brand{background:linear-gradient(180deg,#1a1a1a,#000);border:2px solid #d4af37;border-radius:14px;padding:16px;margin-bottom:18px}
- .brand img{width:100%;max-width:500px;border-radius:10px;box-shadow:0 0 25px rgba(212,175,55,0.5)}
- .brand h2{color:#d4af37;margin:12px 0 0 0;letter-spacing:2px;font-size:20px}
- .brand p{color:#aaa;font-size:11px;margin:6px 0 0 0}
- input[type=file]{display:block;width:100%;padding:14px;background:#1a1a1a;color:#d4af37;border-radius:8px;font-weight:bold;margin-bottom:14px;border:2px dashed #d4af37;cursor:pointer;box-sizing:border-box}
- textarea{width:100%;height:140px;margin-bottom:12px;padding:12px;border-radius:8px;border:1px solid #444;background:#1e1e1e;color:#fff;font-size:15px;box-sizing:border-box}
- button{border:none;padding:14px;display:block;font-size:16px;margin:10px 0;cursor:pointer;border-radius:8px;width:100%;font-weight:bold;box-sizing:border-box}
- .btn-limpiar{background:linear-gradient(90deg,#d4af37,#f9e27a);color:#000}
- .btn-copiar{background:#2196F3;color:#fff}
- .btn-descargar{background:#000;color:#d4af37;border:2px solid #d4af37;font-size:18px;margin-top:18px}
- .resultado{background:#1a1f2a;padding:15px;border-radius:8px;min-height:140px;text-align:left;white-space:pre-wrap;font-size:15px;margin-top:12px;border:1px solid #d4af37}
- .status{font-size:13px;color:#00ffea;margin-bottom:8px;font-weight:bold;min-height:18px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrector Mágico - Fenix 7</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; text-align: center; }
+        .header { border: 2px solid #ffd700; border-radius: 12px; padding: 15px; margin-bottom: 20px; background: #1a1a1a; }
+        h1 { color: #ffd700; font-size: 22px; margin: 5px 0; }
+        .subtitle { font-size: 12px; color: #aaa; margin-bottom: 10px; letter-spacing: 1px; }
+        input[type="file"] { display: block; width: 100%; padding: 15px; background: #1e1e1e; color: #fff; border-radius: 8px; font-weight: bold; margin-bottom: 10px; border: 2px dashed #ffd700; cursor: pointer; box-sizing: border-box; }
+        textarea { width: 100%; height: 150px; margin-bottom: 15px; padding: 12px; border-radius: 8px; border: 1px solid #333; background-color: #1e1e1e; color: #fff; font-size: 16px; box-sizing: border-box; }
+        button { color: #000; border: none; padding: 15px 32px; text-align: center; display: block; font-size: 18px; margin: 10px 0; cursor: pointer; border-radius: 8px; width: 100%; font-weight: bold; box-sizing: border-box; background-color: #ffd700;}
+        .btn-copiar { background-color: #2196F3; color: white; }
+        .btn-descargar { background-color: #4CAF50; color: white; font-size: 20px; margin-top: 20px; }
+        .resultado { background-color: #2c3e50; padding: 15px; border-radius: 8px; min-height: 150px; text-align: left; white-space: pre-wrap; font-size: 16px; margin-top: 15px; border: 1px solid #ffd700; }
+        .status { font-size: 14px; color: #00ffea; margin-bottom: 10px; font-weight: bold; min-height: 20px; }
+    </style>
 </head>
 <body>
-<div class="brand">
- <img src="logo_fenix7.jpg" alt="Academia Literaria Fenix 7">
- <h2>ACADEMIA LITERARIA FENIX 7</h2>
- <p>J-29428935-5 • TURISMO FM C.A. • EDITORIAL INDEPENDIENTE</p>
-</div>
-<h1 style="color:#d4af37;font-size:22px;margin:0">Corrector Magico de Textos</h1>
-<p style="font-size:12px;color:#aaa;margin:6px 0 14px 0">Herramienta oficial - Sello Editorial Fenix 7</p>
+    <div class="header">
+        <div class="subtitle">Academia Literaria Fenix 7</div>
+        <h1>Corrector Mágico de Textos</h1>
+    </div>
 
-<p>1. Sube tu archivo (Word, PDF, ePub o TXT):</p>
-<input type="file" id="fileInput" accept=".docx,.pdf,.epub,.txt">
-<div class="status" id="status">Esperando archivo...</div>
+    <p>1. Sube tu archivo (Word, PDF, ePub o TXT):</p>
+    <input type="file" id="fileInput" accept=".docx,.pdf,.epub,.txt">
+    <div class="status" id="status">Esperando archivo...</div>
 
-<p>2. Texto Original:</p>
-<textarea id="textoSucio" placeholder="El texto del archivo aparecera aqui..."></textarea>
-<button class="btn-limpiar" onclick="corregirTexto()">✨ Limpiar Texto - FENIX 7</button>
+    <p>2. Texto Original:</p>
+    <textarea id="textoSucio" placeholder="El texto del archivo aparecerá aquí..."></textarea>
+    
+    <button onclick="corregirTexto()">✨ Limpiar Texto - FENIX 7</button>
+    
+    <p>3. Texto Corregido:</p>
+    <div class="resultado" id="textoLimpio">El texto corregido aparecerá aquí...</div>
+    
+    <button class="btn-copiar" onclick="copiarTexto()">📋 Copiar Texto</button>
+    <button class="btn-descargar" onclick="descargarTexto()">💾 Descargar Archivo Word (.doc)</button>
 
-<p>3. Texto Corregido:</p>
-<div class="resultado" id="textoLimpio">El texto corregido aparecera aqui...</div>
-<button class="btn-copiar" onclick="copiarTexto()">📋 Copiar Texto</button>
-<button class="btn-descargar" onclick="descargarTexto()">💾 Descargar Word (.doc) - Fenix 7</button>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const $ = id => document.getElementById(id);
 
-<script>
-pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-const $=id=>document.getElementById(id);
-$("fileInput").addEventListener("change",async(e)=>{
- const f=e.target.files[0];if(!f)return;$("status").textContent="Extrayendo...";const ext=f.name.split('.').pop().toLowerCase();
- try{
-  if(ext==="docx"){const buf=await f.arrayBuffer();const res=await mammoth.extractRawText({arrayBuffer:buf});$("textoSucio").value=res.value;$("status").textContent="✅ Word: "+res.value.length+" caracteres";}
-  else if(ext==="pdf"){const buf=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let full="";for(let i=1;i<=pdf.numPages;i++){$("status").textContent=`Leyendo PDF ${i}/${pdf.numPages}`;const page=await pdf.getPage(i);const c=await page.getTextContent();full+=c.items.map(it=>it.str).join(" ")+"\n\n";}$("textoSucio").value=full;$("status").textContent="✅ PDF cargado";}
-  else if(ext==="epub"){const buf=await f.arrayBuffer();const zip=await JSZip.loadAsync(buf);let full="";const files=Object.keys(zip.files).filter(n=>n.endsWith('.html')||n.endsWith('.xhtml'));for(const name of files){const content=await zip.files[name].async("string");full+=content.replace(/<[^>]+>/g,' ')+"\n\n";}$("textoSucio").value=full;$("status").textContent="✅ ePub cargado";}
-  else{const txt=await f.text();$("textoSucio").value=txt;$("status").textContent="✅ TXT cargado";}
- }catch(err){$("status").textContent="❌ Error: "+err.message;}
-});
-function corregirTexto(){
- let texto=$("textoSucio").value;if(!texto){alert("Pega texto primero");return;}
- texto=texto.replace(/[^\S\n]{2,}/g,' ').replace(/\s+([?.!,;:])/g,'$1').replace(/([?.!]) {2,}/g,'$1 ').replace(/---/g,'—').replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g,'$1 $2');
- const t={"mas":"más","ahi":"ahí","ojala":"ojalá","asi":"así","aqui":"aquí","ademas":"además","despues":"después","exito":"éxito","limite":"límite","autentica":"auténtica","dia":"día","tenia":"tenía","habia":"había","sentia":"sentía","creia":"creía","intuicion":"intuición","neuroingenieria":"neuroingeniería","formula":"fórmula","fenix":"fénix","angel":"Ángel"};
- texto=texto.replace(/\b\w+\b/g,w=>{let p=w.toLowerCase();if(t[p]){return w[0]===w[0].toUpperCase()?t[p][0].toUpperCase()+t[p].slice(1):t[p];}return w;});
- $("textoLimpio").innerText=texto;$("status").textContent="✅ Corregido con sello Fenix 7";
-}
-function copiarTexto(){let t=$("textoLimpio").innerText;if(!t||t.includes("aparecera aqui"))return;navigator.clipboard.writeText(t).then(()=>{let b=document.querySelector('.btn-copiar');b.innerText='✅ ¡Copiado!';setTimeout(()=>b.innerText='
+        $("fileInput").addEventListener("change", async (e) => {
+            const f = e.target.files[0];
+            if(!f) return;
+            
+            // Validar si el archivo es muy pesado (más de 10MB) para evitar que el teléfono se trabe
+            if (f.size > 10 * 1024 * 1024) {
+                $("status").textContent = "⚠️ Archivo muy pesado (más de 10MB). Puede que el teléfono no pueda procesarlo.";
+                $("status").style.color = "#ff9800";
+                return;
+            }
+
+            $("status").style.color = "#00ffea";
+            $("status").textContent = "Extrayendo texto... Por favor, espera.";
+            const ext = f.name.split('.').pop().toLowerCase();
+            
+            try{
+                if(ext==="docx"){
+                    const buf = await f.arrayBuffer();
+                    const res = await mammoth.extractRawText({arrayBuffer:buf});
+                    $("textoSucio").value = res.value;
+                    $("status").textContent = "✅ Word cargado: " + res.value.length + " caracteres";
+                } else if(ext==="pdf"){
+                    $("status").textContent = "Leyendo PDF... (esto puede tardar)";
+                    const buf = await f.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+                    let full="";
+                    for(let i=1;i<=pdf.numPages;i++){
+                        $("status").textContent = `Leyendo PDF página ${i} de ${pdf.numPages}...`;
+                        const page = await pdf.getPage(i);
+                        const c = await page.getTextContent();
+                        full += c.items.map(it=>it.str).join(" ") + "\n\n";
+                    }
+                    $("textoSucio").value = full;
+                    $("status").textContent = "✅ PDF cargado";
+                } else if (ext==="epub") {
+                    $("status").textContent = "Extrayendo ePub...";
+                    const buf = await f.arrayBuffer();
+                    const zip = await JSZip.loadAsync(buf);
+                    let full = "";
+                    const htmlFiles = Object.keys(zip.files).filter(name => name.endsWith('.html') || name.endsWith('.xhtml'));
+                    for (const name of htmlFiles) {
+                        const content = await zip.files[name].async("string");
+                        const text = content.replace(/<[^>]+>/g, ' ');
+                        full += text + "\n\n";
+                    }
+                    $("textoSucio").value = full;
+                    $("status").textContent = "✅ ePub cargado";
+                } else {
+                    const txt = await f.text();
+                    $("textoSucio").value = txt;
+                    $("status").textContent = "✅ Texto cargado";
+                }
+            }catch(err){
+                $("status").textContent = "❌ Error al leer archivo: " + err.message;
+                $("status").style.color = "#ff0000";
+            }
+        });
+
+        function corregirTexto() {
+            let texto = $("textoSucio").value;
+            if(!texto) { alert("Primero sube un archivo o pega texto."); return; }
+
+            texto = texto
+                .replace(/[^\S\n]{2,}/g, ' ')        
+                .replace(/\s+([?.!,;:])/g, '$1')     
+                .replace(/([?.!]) {2,}/g, '$1 ')     
+                .replace(/---/g, '—')                
+                .replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g, '$1 $2'); 
+
+            const tildes = {
+                'mas': 'más', 'ahi': 'ahí', 'ojala': 'ojalá', 'asi': 'así',
+                'aqui': 'aquí', 'ademas': 'además', 'despues': 'después',
+                'exito': 'éxito', 'limite': 'límite', 'autentica': 'auténtica',
+                'dia': 'día', 'tenia': 'tenía', 'habia': 'había',
+                'sentia': 'sentía', 'creia': 'creía', 'intuicion': 'intuición',
+                'neuroingenieria': 'neuroingeniería', 'formula': 'fórmula', 'fenix': 'fénix'
+            };
+
+            texto = texto.replace(/\b\w+\b/g, palabra => {
+                const p = palabra.toLowerCase();
+                if (p === 'mas' && /mas\s+no\b/i.test(texto)) return palabra; 
+                
+                if (tildes[p]) {
+                    return palabra[0] === palabra[0].toUpperCase()
+                        ? tildes[p][0].toUpperCase() + tildes[p].slice(1)
+                        : tildes[p];
+                }
+                return palabra;
+            });
+
+            $("textoLimpio").innerText = texto;
+            $("status").textContent = "✅ Texto corregido listo para copiar o descargar.";
+        }
+
+        function copiarTexto() {
+            const texto = $("textoLimpio").innerText;
+            if(!texto || texto.includes("aparecerá aquí")) return;
+            navigator.clipboard.writeText(texto).then(() => {
+                const btn = document.querySelector('.btn-copiar');
+                btn.innerText = '✅ ¡Copiado!';
+                setTimeout(() => btn.innerText = '📋 Copiar Texto', 2000);
+            });
+        }
+
+        function descargarTexto() {
+            const texto = $("textoLimpio").innerText;
+            if(!texto || texto.includes("aparecerá aquí")) { alert("No hay texto corregido para descargar."); return; }
+            
+            const htmlContent = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Documento</title></head><body><p style="white-space: pre-wrap; font-family: Arial, sans-serif;">${texto}</p></body></html>`;
+            
+            const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "Manuscrito_Corregido.doc";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
