@@ -1,56 +1,67 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi App Correctora - AngelStudi07</title>
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #121212; color: #ffffff; padding: 20px; text-align: center; }
-        h1 { color: #4CAF50; font-size: 24px; }
-        textarea { width: 100%; height: 150px; margin-bottom: 15px; padding: 12px; border-radius: 8px; border: 1px solid #333; background-color: #1e1e1e; color: #fff; font-size: 16px; box-sizing: border-box; }
-        button { background-color: #4CAF50; color: white; border: none; padding: 15px 32px; text-align: center; display: block; font-size: 18px; margin: 10px 0; cursor: pointer; border-radius: 8px; width: 100%; font-weight: bold; }
-        button:active { background-color: #3e8e41; }
-        .resultado { background-color: #2c3e50; padding: 15px; border-radius: 8px; min-height: 150px; text-align: left; white-space: pre-wrap; font-size: 16px; margin-top: 15px; border: 1px solid #4CAF50; }
-        .contador { font-size: 12px; color: #888; text-align: right; }
-        .btn-copiar { background-color: #2196F3; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Corrector Magico - Academia Literaria Fenix 7</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+ body{font-family:Arial,sans-serif;background:#0d0d0d;color:#fff;padding:18px;text-align:center;margin:0}
+ .brand{background:linear-gradient(180deg,#1a1a1a,#000);border:2px solid #d4af37;border-radius:14px;padding:16px;margin-bottom:18px}
+ .brand img{width:100%;max-width:500px;border-radius:10px;box-shadow:0 0 25px rgba(212,175,55,0.5)}
+ .brand h2{color:#d4af37;margin:12px 0 0 0;letter-spacing:2px;font-size:20px}
+ .brand p{color:#aaa;font-size:11px;margin:6px 0 0 0}
+ input[type=file]{display:block;width:100%;padding:14px;background:#1a1a1a;color:#d4af37;border-radius:8px;font-weight:bold;margin-bottom:14px;border:2px dashed #d4af37;cursor:pointer;box-sizing:border-box}
+ textarea{width:100%;height:140px;margin-bottom:12px;padding:12px;border-radius:8px;border:1px solid #444;background:#1e1e1e;color:#fff;font-size:15px;box-sizing:border-box}
+ button{border:none;padding:14px;display:block;font-size:16px;margin:10px 0;cursor:pointer;border-radius:8px;width:100%;font-weight:bold;box-sizing:border-box}
+ .btn-limpiar{background:linear-gradient(90deg,#d4af37,#f9e27a);color:#000}
+ .btn-copiar{background:#2196F3;color:#fff}
+ .btn-descargar{background:#000;color:#d4af37;border:2px solid #d4af37;font-size:18px;margin-top:18px}
+ .resultado{background:#1a1f2a;padding:15px;border-radius:8px;min-height:140px;text-align:left;white-space:pre-wrap;font-size:15px;margin-top:12px;border:1px solid #d4af37}
+ .status{font-size:13px;color:#00ffea;margin-bottom:8px;font-weight:bold;min-height:18px}
+</style>
 </head>
 <body>
-    <h1>Corrector Mágico de Textos</h1>
-    <p>Pega tu texto aquí abajo:</p>
-    <textarea id="textoSucio" placeholder="Pega aquí el texto con errores..." oninput="actualizarContador()"></textarea>
-    <div class="contador" id="contador">0 caracteres</div>
-    <button onclick="corregirTexto()">✨ Limpiar Texto</button>
-    <p>Texto Corregido (Listo para copiar):</p>
-    <div class="resultado" id="textoLimpio">El texto corregido aparecerá aquí...</div>
-    <button class="btn-copiar" onclick="copiarTexto()">📋 Copiar Texto Limpio</button>
+<div class="brand">
+ <img src="logo_fenix7.jpg" alt="Academia Literaria Fenix 7">
+ <h2>ACADEMIA LITERARIA FENIX 7</h2>
+ <p>J-29428935-5 • TURISMO FM C.A. • EDITORIAL INDEPENDIENTE</p>
+</div>
+<h1 style="color:#d4af37;font-size:22px;margin:0">Corrector Magico de Textos</h1>
+<p style="font-size:12px;color:#aaa;margin:6px 0 14px 0">Herramienta oficial - Sello Editorial Fenix 7</p>
 
-    <script>
-        function actualizarContador() {
-            let len = document.getElementById('textoSucio').value.length;
-            document.getElementById('contador').innerText = len + ' caracteres';
-        }
-        function corregirTexto() {
-            let texto = document.getElementById('textoSucio').value;
-            let correcciones = [
-                [/ {2,}/g, ' '], [/\s+([?.!,;:])/g, '$1'],
-                [/\bmas\b/gi, 'más'], [/\bahi\b/gi, 'ahí'], [/\bojala\b/gi, 'ojalá'], [/\basi\b/gi, 'así'],
-                [/\bAngel\b/g, 'Ángel'], [/\bdia\b/gi, 'día'], [/\baqui\b/gi, 'aquí'], [/\bademas\b/gi, 'además'],
-                [/\bdespues\b/gi, 'después'], [/\bexito\b/gi, 'éxito'], [/\bIntuicion\b/gi, 'Intuición'],
-                [/\bNeuroingenieria\b/gi, 'Neuroingeniería'], [/\bFormula\b/gi, 'Fórmula'], [/\bFenix\b/gi, 'Fénix'],
-                [/\blimite\b/gi, 'límite'], [/\bautentica\b/gi, 'auténtica'], [/\btenia\b/gi, 'tenía'],
-                [/\bhabia\b/gi, 'había'], [/\bsentia\b/gi, 'sentía'], [/\bcreia\b/gi, 'creía']
-            ];
-            for (let i = 0; i < correcciones.length; i++) {
-                texto = texto.replace(correcciones[i][0], correcciones[i][1]);
-            }
-            texto = texto.replace(/---/g, '—');
-            document.getElementById('textoLimpio').innerText = texto;
-        }
-        function copiarTexto() {
-            let texto = document.getElementById('textoLimpio').innerText;
-            navigator.clipboard.writeText(texto).then(() => { alert('¡Texto copiado! AngelStudi07'); });
-        }
-    </script>
-</body>
-</html>
+<p>1. Sube tu archivo (Word, PDF, ePub o TXT):</p>
+<input type="file" id="fileInput" accept=".docx,.pdf,.epub,.txt">
+<div class="status" id="status">Esperando archivo...</div>
+
+<p>2. Texto Original:</p>
+<textarea id="textoSucio" placeholder="El texto del archivo aparecera aqui..."></textarea>
+<button class="btn-limpiar" onclick="corregirTexto()">✨ Limpiar Texto - FENIX 7</button>
+
+<p>3. Texto Corregido:</p>
+<div class="resultado" id="textoLimpio">El texto corregido aparecera aqui...</div>
+<button class="btn-copiar" onclick="copiarTexto()">📋 Copiar Texto</button>
+<button class="btn-descargar" onclick="descargarTexto()">💾 Descargar Word (.doc) - Fenix 7</button>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+const $=id=>document.getElementById(id);
+$("fileInput").addEventListener("change",async(e)=>{
+ const f=e.target.files[0];if(!f)return;$("status").textContent="Extrayendo...";const ext=f.name.split('.').pop().toLowerCase();
+ try{
+  if(ext==="docx"){const buf=await f.arrayBuffer();const res=await mammoth.extractRawText({arrayBuffer:buf});$("textoSucio").value=res.value;$("status").textContent="✅ Word: "+res.value.length+" caracteres";}
+  else if(ext==="pdf"){const buf=await f.arrayBuffer();const pdf=await pdfjsLib.getDocument({data:buf}).promise;let full="";for(let i=1;i<=pdf.numPages;i++){$("status").textContent=`Leyendo PDF ${i}/${pdf.numPages}`;const page=await pdf.getPage(i);const c=await page.getTextContent();full+=c.items.map(it=>it.str).join(" ")+"\n\n";}$("textoSucio").value=full;$("status").textContent="✅ PDF cargado";}
+  else if(ext==="epub"){const buf=await f.arrayBuffer();const zip=await JSZip.loadAsync(buf);let full="";const files=Object.keys(zip.files).filter(n=>n.endsWith('.html')||n.endsWith('.xhtml'));for(const name of files){const content=await zip.files[name].async("string");full+=content.replace(/<[^>]+>/g,' ')+"\n\n";}$("textoSucio").value=full;$("status").textContent="✅ ePub cargado";}
+  else{const txt=await f.text();$("textoSucio").value=txt;$("status").textContent="✅ TXT cargado";}
+ }catch(err){$("status").textContent="❌ Error: "+err.message;}
+});
+function corregirTexto(){
+ let texto=$("textoSucio").value;if(!texto){alert("Pega texto primero");return;}
+ texto=texto.replace(/[^\S\n]{2,}/g,' ').replace(/\s+([?.!,;:])/g,'$1').replace(/([?.!]) {2,}/g,'$1 ').replace(/---/g,'—').replace(/([a-záéíóúñ])([A-ZÁÉÍÓÚÑ])/g,'$1 $2');
+ const t={"mas":"más","ahi":"ahí","ojala":"ojalá","asi":"así","aqui":"aquí","ademas":"además","despues":"después","exito":"éxito","limite":"límite","autentica":"auténtica","dia":"día","tenia":"tenía","habia":"había","sentia":"sentía","creia":"creía","intuicion":"intuición","neuroingenieria":"neuroingeniería","formula":"fórmula","fenix":"fénix","angel":"Ángel"};
+ texto=texto.replace(/\b\w+\b/g,w=>{let p=w.toLowerCase();if(t[p]){return w[0]===w[0].toUpperCase()?t[p][0].toUpperCase()+t[p].slice(1):t[p];}return w;});
+ $("textoLimpio").innerText=texto;$("status").textContent="✅ Corregido con sello Fenix 7";
+}
+function copiarTexto(){let t=$("textoLimpio").innerText;if(!t||t.includes("aparecera aqui"))return;navigator.clipboard.writeText(t).then(()=>{let b=document.querySelector('.btn-copiar');b.innerText='✅ ¡Copiado!';setTimeout(()=>b.innerText='
